@@ -7,15 +7,19 @@
 using ::testing::AtLeast;
 using ::testing::Return;
 using ::testing::_;
+using ::testing::Invoke;
 
+bool some_function(std::string username, std::string password) {return false; }
+
+/*
 class DatabaseConnect {
 public:
   virtual bool login(std::string username, std::string passwrod) {return true;}
   virtual bool logout(std::string username) {return true;}
   virtual int fetchRecord() {return -1;}
 };
-
-class MockDB : public DatabaseConnect {
+*/
+class DatabaseConnect { // : public DatabaseConnect {
 public:
   MOCK_METHOD0(fetchRecord, int());
   MOCK_METHOD1(logout, bool (std::string username));
@@ -27,6 +31,7 @@ class MyDatabase {
 public: 
   MyDatabase(DatabaseConnect& dbC): dbC(dbC) {}
   int Init(std::string username, std::string password) {
+    //std::cout << dbC.login(username, password) << std::endl;
     if (dbC.login(username, password) != true) {
       std::cout << "DB Failure" << std::endl; return -1;
     } else {
@@ -37,13 +42,13 @@ public:
 
 TEST (MyDBTest, LoginTest) {
   // Arrange
-  MockDB mdb;
+  DatabaseConnect mdb;
   MyDatabase db(mdb);
-  EXPECT_CALL(mdb, login("Terminator", "I'm Back")).
-    Times(1).
-    WillOnce(Return(true));
+  EXPECT_CALL(mdb, login("Terminator", _)).
+    Times(AtLeast(1)).
+    WillOnce(Invoke(some_function));
 
-  int retValue = db.Init("Terminator", "I'm Back");
+  int retValue = db.Init("Terminator", "I'm not Back");
 
   EXPECT_EQ(retValue, 1);
 }
